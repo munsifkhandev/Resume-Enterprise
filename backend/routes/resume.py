@@ -9,15 +9,16 @@ router = APIRouter()
 async def process_resume(
     file: UploadFile = File(...), 
     job_description: str = Form(""),
-    mode: str = Form("analyze")
+    mode: str = Form("analyze"),
+    user_email: str = Form(None) # 👈 Naya Parameter (Optional)
 ):
-    # 1. Extract Text
+    # 1. Text Extraction (Same)
     text = await extract_text_from_pdf(file)
 
-    # 2. Get AI Response
+    # 2. AI Response (Same)
     result = get_ai_response(text, mode, job_description)
 
-    # 3. Save to DB
+    # 3. Save to DB (UPDATED)
     try:
         score = 0
         if isinstance(result, dict) and "ats_score" in result:
@@ -27,9 +28,10 @@ async def process_resume(
             "filename": file.filename,
             "mode": mode,
             "ai_score": score,
-            "ai_response": result
+            "ai_response": result,
+            "user_email": user_email # 🔥 Email bhi save kar rahe hain ab
         }).execute()
-        print("✅ Data Saved to DB")
+        print(f"✅ Data Saved for {user_email}")
     except Exception as e:
         print(f"⚠️ DB Error: {e}")
 

@@ -3,7 +3,9 @@ import { useState } from "react";
 import axios from "axios";
 import { Upload, Flame, Hammer, BarChart3, Loader2, CheckCircle, AlertCircle, FileText, ArrowRight } from "lucide-react";
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { useUser } from "@clerk/nextjs";
 export default function Home() {
+  const { user } = useUser(); // 👈 User ka data yahan milega
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState("analyze");
   const [loading, setLoading] = useState(false);
@@ -16,6 +18,10 @@ export default function Home() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("mode", mode);
+
+    if (user && user.primaryEmailAddress) {
+      formData.append("user_email", user.primaryEmailAddress.emailAddress);
+    }
 
     try {
       // Backend URL
