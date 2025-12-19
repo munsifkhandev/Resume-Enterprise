@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import axios from "axios";
-import { Upload, Flame, Hammer, BarChart3, Loader2, CheckCircle, AlertCircle, FileText, ArrowRight } from "lucide-react";
-import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
-import { useUser } from "@clerk/nextjs";
+import Link from "next/link"; // 👈 Navigation ke liye zaroori
+import { Upload, Flame, Hammer, BarChart3, Loader2, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
+
 export default function Home() {
-  const { user } = useUser(); // 👈 User ka data yahan milega
+  const { user } = useUser(); // 👈 User data yahan se milega
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState("analyze");
   const [loading, setLoading] = useState(false);
@@ -15,16 +16,18 @@ export default function Home() {
     if (!file) return alert("Please upload a PDF first!");
     setLoading(true);
     setResult(null);
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("mode", mode);
 
+    // 🔥 Agar user login hai, toh email backend bhejo
     if (user && user.primaryEmailAddress) {
       formData.append("user_email", user.primaryEmailAddress.emailAddress);
     }
 
     try {
-      // Backend URL
+      // Backend URL (Make sure backend chal raha ho)
       const res = await axios.post("http://127.0.0.1:8000/process", formData);
       setResult(res.data.data);
     } catch (e) {
@@ -34,11 +37,11 @@ export default function Home() {
     }
   };
 
-  // --- RESULT RENDER LOGIC ---
+  // --- RESULT RENDER LOGIC (UI) ---
   const renderResult = () => {
     if (!result) return null;
 
-    // 🔥 ROAST MODE UI (Dark & Savage)
+    // 🔥 ROAST MODE UI
     if (mode === "roast") {
       return (
         <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl border border-red-500/30 animate-in fade-in slide-in-from-bottom-5">
@@ -64,7 +67,7 @@ export default function Home() {
       );
     }
 
-    // 📊 ANALYZER / BUILDER UI (Clean & Professional)
+    // 📊 ANALYZER / BUILDER UI
     return (
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 animate-in fade-in slide-in-from-bottom-5">
         {/* Header Score */}
@@ -123,7 +126,6 @@ export default function Home() {
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-blue-100">
 
       {/* NAVBAR */}
-      {/* NAVBAR */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md bg-white/80">
         <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2.5">
@@ -134,7 +136,7 @@ export default function Home() {
           </div>
 
           <div className="flex gap-4 items-center">
-            {/* Agar User Logged OUT hai toh Sign In button dikhao */}
+            {/* Login Button (Jab user logged out ho) */}
             <SignedOut>
               <SignInButton mode="modal">
                 <button className="bg-slate-900 text-white px-5 py-2 rounded-lg font-medium hover:bg-slate-800 transition shadow-lg shadow-slate-900/20">
@@ -143,8 +145,13 @@ export default function Home() {
               </SignInButton>
             </SignedOut>
 
-            {/* Agar User Logged IN hai toh uska Photo (UserButton) dikhao */}
+            {/* Profile & History (Jab user logged in ho) */}
             <SignedIn>
+              <Link href="/dashboard">
+                <button className="text-sm font-medium text-slate-500 hover:text-slate-900 transition mr-2">
+                  History
+                </button>
+              </Link>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
           </div>
