@@ -2,7 +2,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Upload, Flame, Hammer, BarChart3, Loader2, CheckCircle, AlertCircle, FileText, ArrowRight } from "lucide-react";
-
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState("analyze");
@@ -117,6 +117,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-blue-100">
 
       {/* NAVBAR */}
+      {/* NAVBAR */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md bg-white/80">
         <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2.5">
@@ -125,9 +126,21 @@ export default function Home() {
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-800">Resume<span className="text-blue-600">AI</span></span>
           </div>
-          <div className="flex gap-4">
-            <button className="text-sm font-medium text-slate-500 hover:text-slate-900 transition">Pricing</button>
-            <button className="text-sm font-medium text-slate-500 hover:text-slate-900 transition">Login</button>
+
+          <div className="flex gap-4 items-center">
+            {/* Agar User Logged OUT hai toh Sign In button dikhao */}
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="bg-slate-900 text-white px-5 py-2 rounded-lg font-medium hover:bg-slate-800 transition shadow-lg shadow-slate-900/20">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
+
+            {/* Agar User Logged IN hai toh uska Photo (UserButton) dikhao */}
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
           </div>
         </div>
       </nav>
@@ -155,8 +168,8 @@ export default function Home() {
               key={m.id}
               onClick={() => setMode(m.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all duration-200 ${mode === m.id
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                ? "bg-slate-900 text-white shadow-md"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                 }`}
             >
               <m.icon size={18} className={mode === m.id ? "text-blue-400" : ""} />
