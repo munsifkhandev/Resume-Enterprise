@@ -2,12 +2,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // 👈 Import Router for redirect
 // ✅ All Icons Imported Correctly
 import { Upload, Flame, Hammer, BarChart3, Loader2, CheckCircle, AlertCircle, ArrowRight, X, FileText } from "lucide-react";
 import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 
 export default function Home() {
   const { user } = useUser();
+  const router = useRouter(); // 👈 Initialize Router
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [mode, setMode] = useState("analyze");
@@ -37,6 +39,18 @@ export default function Home() {
 
     try {
       const res = await axios.post("http://127.0.0.1:8000/process", formData);
+
+      // 🚀 BUILDER MODE REDIRECT LOGIC
+      if (mode === "builder") {
+        const aiData = res.data.data;
+        // Data ko save karo taaki next page par mile
+        localStorage.setItem("resumeData", JSON.stringify(aiData));
+        // Redirect to Builder Page
+        router.push("/builder");
+        return;
+      }
+
+      // Normal Modes (Analyze/Roast)
       setResult(res.data.data);
     } catch (e) {
       alert("Error: Backend is not running or DB error.");
@@ -51,7 +65,7 @@ export default function Home() {
     setPdfUrl(null);
   };
 
-  // --- RESULT RENDER LOGIC (UPDATED WITH SCORING) ---
+  // --- RESULT RENDER LOGIC ---
   const renderResult = () => {
     if (!result) return null;
 
@@ -93,7 +107,7 @@ export default function Home() {
       );
     }
 
-    // 📊 3. ANALYZER / BUILDER UI (Enterprise Grade)
+    // 📊 3. ANALYZER UI (Enterprise Grade)
     return (
       <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
 
@@ -101,8 +115,8 @@ export default function Home() {
         <div className="flex justify-between items-start mb-8 border-b border-gray-100 pb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              {mode === 'builder' ? <Hammer className="text-green-600" /> : <BarChart3 className="text-blue-600" />}
-              {mode === 'builder' ? 'ATS Rewrite' : 'Analysis Report'}
+              <BarChart3 className="text-blue-600" />
+              Analysis Report
             </h2>
             <p className="text-sm text-slate-500 mt-1">Enterprise Grade Assessment</p>
           </div>
@@ -111,7 +125,7 @@ export default function Home() {
           {result.ats_score !== undefined && (
             <div className="text-center">
               <div className={`text-5xl font-black tracking-tighter ${result.ats_score > 80 ? "text-emerald-500" :
-                  result.ats_score > 60 ? "text-yellow-500" : "text-red-500"
+                result.ats_score > 60 ? "text-yellow-500" : "text-red-500"
                 }`}>
                 {result.ats_score}
               </div>
@@ -120,77 +134,68 @@ export default function Home() {
           )}
         </div>
 
-        {mode === 'analyze' ? (
-          <div className="space-y-8">
-
-            {/* 🔥 NEW: SCORE BREAKDOWN (The Authentic Part) */}
-            {result.score_breakdown && (
-              <div className="grid grid-cols-2 gap-4">
-                {Object.entries(result.score_breakdown).map(([key, val]: any) => (
-                  <div key={key} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div className="flex justify-between text-xs font-bold text-slate-600 mb-1 uppercase">
-                      <span>{key}</span>
-                      <span>{val}/25</span>
-                    </div>
-                    {/* Progress Bar */}
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${val >= 20 ? "bg-emerald-500" :
-                            val >= 15 ? "bg-blue-500" :
-                              val >= 10 ? "bg-yellow-500" : "bg-red-500"
-                          }`}
-                        style={{ width: `${(val / 25) * 100}%` }}
-                      ></div>
-                    </div>
+        <div className="space-y-8">
+          {/* 🔥 SCORE BREAKDOWN */}
+          {result.score_breakdown && (
+            <div className="grid grid-cols-2 gap-4">
+              {Object.entries(result.score_breakdown).map(([key, val]: any) => (
+                <div key={key} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex justify-between text-xs font-bold text-slate-600 mb-1 uppercase">
+                    <span>{key}</span>
+                    <span>{val}/25</span>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Missing Skills Section */}
-            <div className="bg-rose-50/50 p-5 rounded-xl border border-rose-100">
-              <h3 className="font-bold text-rose-700 mb-3 flex items-center gap-2 text-sm"><AlertCircle size={16} /> Critical Gaps</h3>
-              <div className="flex flex-wrap gap-2">
-                {result.missing_skills?.length > 0 ? (
-                  result.missing_skills.map((skill: string, i: number) => (
-                    <span key={i} className="px-2.5 py-1 bg-white text-rose-700 text-xs font-semibold rounded-md border border-rose-200 shadow-sm">
-                      {skill}
-                    </span>
-                  ))
-                ) : <span className="text-xs text-rose-400 italic">No major skills missing.</span>}
-              </div>
+                  {/* Progress Bar */}
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full ${val >= 20 ? "bg-emerald-500" :
+                        val >= 15 ? "bg-blue-500" :
+                          val >= 10 ? "bg-yellow-500" : "bg-red-500"
+                        }`}
+                      style={{ width: `${(val / 25) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
 
-            {/* Improvements Section */}
-            <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
-              <h3 className="font-bold text-blue-700 mb-3 flex items-center gap-2 text-sm"><CheckCircle size={16} /> Expert Recommendations</h3>
-              <ul className="space-y-3">
-                {result.improvement_tips?.length > 0 ? (
-                  result.improvement_tips.map((tip: string, i: number) => (
-                    <li key={i} className="text-sm text-slate-700 flex items-start gap-3 bg-white p-3 rounded-lg border border-blue-100/50 shadow-sm">
-                      <span className="mt-1.5 block min-w-[6px] min-h-[6px] rounded-full bg-blue-500"></span>
-                      {tip}
-                    </li>
-                  ))
-                ) : <span className="text-xs text-blue-400 italic">Resume looks good!</span>}
-              </ul>
+          {/* Missing Skills Section */}
+          <div className="bg-rose-50/50 p-5 rounded-xl border border-rose-100">
+            <h3 className="font-bold text-rose-700 mb-3 flex items-center gap-2 text-sm"><AlertCircle size={16} /> Critical Gaps</h3>
+            <div className="flex flex-wrap gap-2">
+              {result.missing_skills?.length > 0 ? (
+                result.missing_skills.map((skill: string, i: number) => (
+                  <span key={i} className="px-2.5 py-1 bg-white text-rose-700 text-xs font-semibold rounded-md border border-rose-200 shadow-sm">
+                    {skill}
+                  </span>
+                ))
+              ) : <span className="text-xs text-rose-400 italic">No major skills missing.</span>}
             </div>
-
-            {/* Summary Section */}
-            {result.summary && (
-              <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-600 leading-relaxed border border-slate-200">
-                <span className="font-bold text-slate-900 block mb-1">Summary:</span>
-                {result.summary}
-              </div>
-            )}
-
           </div>
-        ) : (
-          // JSON VIEW (For debugging)
-          <pre className="whitespace-pre-wrap bg-slate-50 p-4 rounded-lg text-xs font-mono text-slate-700 border border-slate-200 overflow-x-auto max-h-[500px]">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        )}
+
+          {/* Improvements Section */}
+          <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
+            <h3 className="font-bold text-blue-700 mb-3 flex items-center gap-2 text-sm"><CheckCircle size={16} /> Expert Recommendations</h3>
+            <ul className="space-y-3">
+              {result.improvement_tips?.length > 0 ? (
+                result.improvement_tips.map((tip: string, i: number) => (
+                  <li key={i} className="text-sm text-slate-700 flex items-start gap-3 bg-white p-3 rounded-lg border border-blue-100/50 shadow-sm">
+                    <span className="mt-1.5 block min-w-[6px] min-h-[6px] rounded-full bg-blue-500"></span>
+                    {tip}
+                  </li>
+                ))
+              ) : <span className="text-xs text-blue-400 italic">Resume looks good!</span>}
+            </ul>
+          </div>
+
+          {/* Summary Section */}
+          {result.summary && (
+            <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-600 leading-relaxed border border-slate-200">
+              <span className="font-bold text-slate-900 block mb-1">Summary:</span>
+              {result.summary}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -286,7 +291,7 @@ export default function Home() {
           </div>
         ) : (
 
-          // VIEW 2: SPLIT SCREEN
+          // VIEW 2: SPLIT SCREEN (Only for Analyze/Roast)
           <div className="grid lg:grid-cols-2 gap-6 h-[85vh] animate-in fade-in">
             {/* LEFT: PDF VIEWER */}
             <div className="bg-slate-800 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col">

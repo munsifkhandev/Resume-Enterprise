@@ -1,52 +1,227 @@
 "use client";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Plus, Trash2, GraduationCap, Briefcase } from "lucide-react";
 
-
+// PDF Preview Component
 const ResumePreview = dynamic(() => import("../../components/ResumePreview"), {
     ssr: false,
-    loading: () => <div className="text-white flex items-center justify-center h-full">Loading PDF Engine...</div>
+    loading: () => <div className="flex items-center justify-center h-full text-slate-400">Loading PDF Engine...</div>
 });
 
 export default function BuilderPage() {
-    // Dummy Data for testing
-    const dummyData = {
-        name: "Munsif Khan",
+    const [resumeData, setResumeData] = useState({
+        fullName: "Munsif Khan",
         email: "munsif@example.com",
-        phone: "+92 300 1234567"
+        phone: "+92 300 1234567",
+        linkedin: "linkedin.com/in/munsif",
+        skills: "Python, React, Next.js, FastAPI, PostgreSQL",
+        experience: [
+            {
+                role: "Senior Software Engineer",
+                company: "Tech Corp",
+                date: "2023 - Present",
+                location: "Islamabad",
+                description: "Built scalable APIs handling 10k users. Optimized DB queries by 40%."
+            }
+        ],
+        education: [
+            {
+                degree: "BS Computer Science",
+                school: "Air University",
+                date: "2019 - 2023",
+                location: "Islamabad"
+            }
+        ]
+    });
+
+    // AUTO-FILL EFFECT
+    useEffect(() => {
+        const savedData = localStorage.getItem("resumeData");
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                setResumeData(prev => ({
+                    ...prev,
+                    fullName: parsed.personal_info?.name || parsed.name || prev.fullName || "",
+                    email: parsed.personal_info?.email || parsed.email || prev.email || "",
+                    phone: parsed.personal_info?.phone || parsed.phone || prev.phone || "",
+                    linkedin: parsed.personal_info?.linkedin || parsed.linkedin || prev.linkedin || "",
+                    skills: Array.isArray(parsed.skills) ? parsed.skills.join(", ") : (parsed.skills || prev.skills || ""),
+
+                    experience: (parsed.experience || []).map((item: any) => ({
+                        role: item.role || item.title || "",
+                        company: item.company || "",
+                        date: item.date || "",
+                        location: item.location || "",
+                        description: item.description || ""
+                    })),
+
+                    education: (parsed.education || []).map((item: any) => ({
+                        degree: item.degree || "",
+                        school: item.school || item.university || "",
+                        date: item.date || "",
+                        location: item.location || ""
+                    }))
+                }));
+            } catch (e) {
+                console.error("Error parsing AI data", e);
+            }
+        }
+    }, []);
+
+    // HANDLERS
+    const handleChange = (e: any) => {
+        const { name, value } = e.target;
+        setResumeData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleExperienceChange = (index: number, field: string, value: string) => {
+        const newExp: any = [...resumeData.experience];
+        newExp[index] = { ...newExp[index], [field]: value };
+        setResumeData(prev => ({ ...prev, experience: newExp }));
+    };
+
+    const handleEducationChange = (index: number, field: string, value: string) => {
+        const newEdu: any = [...resumeData.education];
+        newEdu[index] = { ...newEdu[index], [field]: value };
+        setResumeData(prev => ({ ...prev, education: newEdu }));
+    };
+
+    // Add/Remove Helpers
+    const addExperience = () => {
+        setResumeData(prev => ({
+            ...prev,
+            experience: [...prev.experience, { role: "", company: "", date: "", location: "", description: "" }]
+        }));
+    };
+    const removeExperience = (index: number) => {
+        const newExp = [...resumeData.experience];
+        newExp.splice(index, 1);
+        setResumeData(prev => ({ ...prev, experience: newExp }));
+    };
+    const addEducation = () => {
+        setResumeData(prev => ({
+            ...prev,
+            education: [...prev.education, { degree: "", school: "", date: "", location: "" }]
+        }));
+    };
+    const removeEducation = (index: number) => {
+        const newEdu = [...resumeData.education];
+        newEdu.splice(index, 1);
+        setResumeData(prev => ({ ...prev, education: newEdu }));
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white flex flex-col h-screen">
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col h-screen font-sans">
 
-            {/* Navbar */}
-            <div className="h-16 border-b border-slate-700 flex items-center justify-between px-6 bg-slate-900">
-                <div className="flex items-center gap-4">
-                    <Link href="/" className="text-slate-400 hover:text-white transition">
-                        <ArrowLeft size={20} />
-                    </Link>
-                    <h1 className="font-bold text-lg">Resume Builder <span className="text-xs bg-blue-600 px-2 py-0.5 rounded text-white ml-2">BETA</span></h1>
+            {/* NAVBAR */}
+            <div className="h-16 border-b border-slate-700 flex items-center justify-between px-6 bg-slate-950 shrink-0 z-10">
+                <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                    <ArrowLeft size={20} /> <span className="font-bold">Back</span>
+                </Link>
+                <div className="flex gap-3">
+                    <button className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                        <Download size={16} /> Download PDF
+                    </button>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                    <Download size={16} /> Download PDF
-                </button>
             </div>
 
-            {/* Main Workspace */}
+            {/* WORKSPACE */}
             <div className="flex-1 flex overflow-hidden">
 
-                {/* LEFT: Form (Placeholder) */}
-                <div className="w-1/3 border-r border-slate-700 p-6 overflow-y-auto bg-slate-800">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Edit Details</h2>
-                    <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600 text-slate-300 text-sm">
-                        👈 Forms will come here.
+                {/* LEFT: EDITOR FORM */}
+                <div className="w-[40%] border-r border-slate-700 overflow-y-auto bg-slate-900 custom-scrollbar">
+                    <div className="p-8 space-y-8">
+
+                        {/* Personal Info */}
+                        <section>
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Personal Details</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                    <label className="text-xs text-slate-400 mb-1 block">Full Name</label>
+                                    <input type="text" name="fullName" value={resumeData.fullName || ""} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded p-2.5 text-sm focus:border-blue-500 outline-none transition" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 mb-1 block">Email</label>
+                                    <input type="text" name="email" value={resumeData.email || ""} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded p-2.5 text-sm focus:border-blue-500 outline-none transition" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 mb-1 block">Phone</label>
+                                    <input type="text" name="phone" value={resumeData.phone || ""} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded p-2.5 text-sm focus:border-blue-500 outline-none transition" />
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="text-xs text-slate-400 mb-1 block">LinkedIn / Portfolio</label>
+                                    <input type="text" name="linkedin" value={resumeData.linkedin || ""} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded p-2.5 text-sm focus:border-blue-500 outline-none transition" />
+                                </div>
+                            </div>
+                        </section>
+
+                        <hr className="border-slate-800" />
+
+                        {/* Experience */}
+                        <section>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2"><Briefcase size={14} /> Experience</h3>
+                            </div>
+                            {resumeData.experience.map((job, index) => (
+                                <div key={index} className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-4 group">
+                                    <div className="flex justify-between mb-2">
+                                        <span className="text-xs text-slate-500">Position {index + 1}</span>
+                                        <button onClick={() => removeExperience(index)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <input placeholder="Job Title" value={job.role || ""} onChange={(e) => handleExperienceChange(index, 'role', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-sm text-white font-bold" />
+                                        <input placeholder="Company" value={job.company || ""} onChange={(e) => handleExperienceChange(index, 'company', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-sm text-white" />
+                                        <input placeholder="Date" value={job.date || ""} onChange={(e) => handleExperienceChange(index, 'date', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-xs text-slate-300" />
+                                        <input placeholder="Location" value={job.location || ""} onChange={(e) => handleExperienceChange(index, 'location', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-xs text-slate-300" />
+                                    </div>
+                                    <textarea placeholder="Job Description" value={job.description || ""} onChange={(e) => handleExperienceChange(index, 'description', e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm min-h-[80px] text-slate-300" />
+                                </div>
+                            ))}
+                            <button onClick={addExperience} className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 font-bold mt-2"><Plus size={14} /> Add Position</button>
+                        </section>
+
+                        <hr className="border-slate-800" />
+
+                        {/* Education (Jahan aapko error aa raha tha, ab fixed hai) */}
+                        <section>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2"><GraduationCap size={14} /> Education</h3>
+                            </div>
+                            {resumeData.education.map((edu, index) => (
+                                <div key={index} className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-4 group">
+                                    <div className="flex justify-between mb-2">
+                                        <span className="text-xs text-slate-500">School {index + 1}</span>
+                                        <button onClick={() => removeEducation(index)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* ✅ FIX: Yahan maine || "" add kar diya hai taaki undefined na ho */}
+                                        <input placeholder="Degree" value={edu.degree || ""} onChange={(e) => handleEducationChange(index, 'degree', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-sm text-white font-bold" />
+                                        <input placeholder="School" value={edu.school || ""} onChange={(e) => handleEducationChange(index, 'school', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-sm text-white" />
+                                        <input placeholder="Date" value={edu.date || ""} onChange={(e) => handleEducationChange(index, 'date', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-xs text-slate-300" />
+                                        <input placeholder="Location" value={edu.location || ""} onChange={(e) => handleEducationChange(index, 'location', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-xs text-slate-300" />
+                                    </div>
+                                </div>
+                            ))}
+                            <button onClick={addEducation} className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 font-bold mt-2"><Plus size={14} /> Add Education</button>
+                        </section>
+
+                        <hr className="border-slate-800" />
+
+                        {/* Skills */}
+                        <section>
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Skills</h3>
+                            <textarea name="skills" value={resumeData.skills || ""} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded p-3 text-sm min-h-[80px] focus:border-blue-500 outline-none" placeholder="Skills..." />
+                        </section>
+
                     </div>
                 </div>
 
-                {/* RIGHT: Live Preview */}
-                <div className="w-2/3 bg-slate-500 flex justify-center items-center p-8">
-                    <ResumePreview data={dummyData} />
+                {/* RIGHT: LIVE PREVIEW */}
+                <div className="w-[60%] h-full bg-slate-800 relative">
+                    <ResumePreview data={resumeData} />
                 </div>
 
             </div>

@@ -1,127 +1,74 @@
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import React from 'react';
+import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 
-// 1. Styles Define karna (CSS jaisa, par PDF ke liye)
 const styles = StyleSheet.create({
-    page: {
-        padding: 30,
-        fontFamily: 'Helvetica',
-        fontSize: 10,
-        lineHeight: 1.5,
-    },
-    header: {
-        marginBottom: 20,
-        textAlign: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#000',
-        paddingBottom: 10,
-    },
-    name: {
-        fontSize: 24,
-        fontFamily: 'Helvetica-Bold',
-        textTransform: 'uppercase',
-        marginBottom: 5,
-    },
-    contact: {
-        fontSize: 10,
-        color: '#333',
-    },
-    section: {
-        marginBottom: 10,
-    },
-    sectionTitle: {
-        fontSize: 12,
-        fontFamily: 'Helvetica-Bold',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        marginBottom: 5,
-        textTransform: 'uppercase',
-    },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 2,
-    },
-    bold: {
-        fontFamily: 'Helvetica-Bold',
-    },
-    bulletPoint: {
-        flexDirection: 'row',
-        marginBottom: 2,
-        paddingLeft: 10,
-    },
-    bullet: {
-        width: 10,
-    },
-    bulletText: {
-        flex: 1,
-    },
+    page: { padding: 40, fontFamily: 'Helvetica', fontSize: 10, lineHeight: 1.5 },
+    header: { marginBottom: 20, textAlign: 'center', borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 10 },
+    name: { fontSize: 24, fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', marginBottom: 5 },
+    contact: { fontSize: 10, color: '#333' },
+    section: { marginBottom: 15 },
+    sectionTitle: { fontSize: 12, fontFamily: 'Helvetica-Bold', borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 8, textTransform: 'uppercase', paddingBottom: 2 },
+    row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
+    bold: { fontFamily: 'Helvetica-Bold' },
+    italic: { fontFamily: 'Helvetica-Oblique' },
+    bulletPoint: { flexDirection: 'row', marginBottom: 2, paddingLeft: 10 },
+    bullet: { width: 10 },
+    bulletText: { flex: 1 },
 });
 
-// 2. Resume Data Prop (Abhi ke liye dummy data lenge)
-interface ResumeProps {
-    data?: any;
-}
-
-// 3. The Document Component
-export const HarvardTemplate = ({ data }: ResumeProps) => (
+export const HarvardTemplate = ({ data }: any) => (
     <Document>
         <Page size="A4" style={styles.page}>
 
-            {/* HEADER */}
+            {/* 1. HEADER */}
             <View style={styles.header}>
-                <Text style={styles.name}>{data?.name || "YOUR NAME HERE"}</Text>
+                <Text style={styles.name}>{data.fullName || "YOUR NAME"}</Text>
                 <Text style={styles.contact}>
-                    {data?.email || "email@example.com"} | {data?.phone || "+92 300 1234567"} | {data?.linkedin || "linkedin.com/in/you"}
+                    {data.email} | {data.phone} | {data.linkedin}
                 </Text>
             </View>
 
-            {/* EXPERIENCE SECTION */}
+            {/* 2. EXPERIENCE (Dynamic Map) */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Experience</Text>
-
-                {/* Job 1 */}
-                <View style={{ marginBottom: 8 }}>
-                    <View style={styles.row}>
-                        <Text style={styles.bold}>Senior Software Engineer</Text>
-                        <Text>Sept 2023 - Present</Text>
+                {data.experience?.map((job: any, index: number) => (
+                    <View key={index} style={{ marginBottom: 10 }}>
+                        <View style={styles.row}>
+                            <Text style={styles.bold}>{job.role}</Text>
+                            <Text>{job.date}</Text>
+                        </View>
+                        <View style={styles.row}>
+                            <Text style={styles.italic}>{job.company}</Text>
+                            <Text>{job.location}</Text>
+                        </View>
+                        <View style={{ marginTop: 2 }}>
+                            <Text style={styles.bulletText}>{job.description}</Text>
+                        </View>
                     </View>
-                    <View style={styles.row}>
-                        <Text style={{ fontStyle: 'italic' }}>Tech Company Inc.</Text>
-                        <Text>Islamabad, Pakistan</Text>
-                    </View>
-                    <View style={styles.bulletPoint}>
-                        <Text style={styles.bullet}>•</Text>
-                        <Text style={styles.bulletText}>Developed scalable APIs using Python and FastAPI, handling 10k+ requests daily.</Text>
-                    </View>
-                    <View style={styles.bulletPoint}>
-                        <Text style={styles.bullet}>•</Text>
-                        <Text style={styles.bulletText}>Reduced database query time by 40% by implementing Redis caching.</Text>
-                    </View>
-                </View>
+                ))}
             </View>
 
-            {/* EDUCATION SECTION */}
+            {/* 3. EDUCATION (Dynamic Map) */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Education</Text>
-                <View style={styles.row}>
-                    <Text style={styles.bold}>Bachelor of Computer Science</Text>
-                    <Text>2019 - 2023</Text>
-                </View>
-                <View style={styles.row}>
-                    <Text>University of Engineering & Technology</Text>
-                    <Text>Lahore, PK</Text>
-                </View>
+                {data.education?.map((edu: any, index: number) => (
+                    <View key={index} style={{ marginBottom: 5 }}>
+                        <View style={styles.row}>
+                            <Text style={styles.bold}>{edu.degree}</Text>
+                            <Text>{edu.date}</Text>
+                        </View>
+                        <View style={styles.row}>
+                            <Text>{edu.school}</Text>
+                            <Text>{edu.location}</Text>
+                        </View>
+                    </View>
+                ))}
             </View>
 
-            {/* SKILLS SECTION */}
+            {/* 4. SKILLS */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Skills</Text>
-                <Text>
-                    <Text style={styles.bold}>Languages: </Text> Python, TypeScript, SQL, HTML/CSS
-                </Text>
-                <Text>
-                    <Text style={styles.bold}>Frameworks: </Text> Next.js, FastAPI, React, Tailwind CSS
-                </Text>
+                <Text>{data.skills}</Text>
             </View>
 
         </Page>

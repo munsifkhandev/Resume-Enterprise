@@ -1,4 +1,3 @@
-// frontend/src/components/ResumePreview.tsx
 "use client";
 import React from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
@@ -10,7 +9,7 @@ interface Props {
 
 const ResumePreview = ({ data }: Props) => {
     return (
-        <PDFViewer className="w-full h-full shadow-2xl rounded-lg" showToolbar={true}>
+        <PDFViewer className="w-full h-full border-none" showToolbar={true}>
             <HarvardTemplate data={data} />
         </PDFViewer>
     );
