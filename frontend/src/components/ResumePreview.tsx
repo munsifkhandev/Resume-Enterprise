@@ -9,7 +9,12 @@ interface Props {
 
 const ResumePreview = ({ data }: Props) => {
     return (
-        <PDFViewer className="w-full h-full border-none" showToolbar={true}>
+
+        <PDFViewer
+            key={JSON.stringify(data)}
+            className="w-full h-full border-none"
+            showToolbar={true}
+        >
             <HarvardTemplate data={data} />
         </PDFViewer>
     );

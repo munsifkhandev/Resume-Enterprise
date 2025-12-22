@@ -11,30 +11,29 @@ const ResumePreview = dynamic(() => import("../../components/ResumePreview"), {
 });
 
 export default function BuilderPage() {
+    // 1. REAL-TIME STATE (Form isse chalega - Fast)
     const [resumeData, setResumeData] = useState({
-        fullName: "Munsif Khan",
-        email: "munsif@example.com",
-        phone: "+92 300 1234567",
-        linkedin: "linkedin.com/in/munsif",
-        skills: "Python, React, Next.js, FastAPI, PostgreSQL",
-        experience: [
-            {
-                role: "Senior Software Engineer",
-                company: "Tech Corp",
-                date: "2023 - Present",
-                location: "Islamabad",
-                description: "Built scalable APIs handling 10k users. Optimized DB queries by 40%."
-            }
-        ],
-        education: [
-            {
-                degree: "BS Computer Science",
-                school: "Air University",
-                date: "2019 - 2023",
-                location: "Islamabad"
-            }
-        ]
+        fullName: "",
+        email: "",
+        phone: "",
+        linkedin: "",
+        skills: "",
+        experience: [] as any[],
+        education: [] as any[]
     });
+
+    // 2. DEBOUNCED STATE (PDF isse chalega - Slow & Safe)
+    const [previewData, setPreviewData] = useState(resumeData);
+
+    // 🚀 DEBOUNCE EFFECT: 
+    // Jab tak user type kar raha hai, wait karo. Jab 1 second ruk jaye, tab PDF update karo.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPreviewData(resumeData);
+        }, 800); // 800ms delay (Ideal for PDF)
+
+        return () => clearTimeout(timer);
+    }, [resumeData]);
 
     // AUTO-FILL EFFECT
     useEffect(() => {
@@ -42,14 +41,12 @@ export default function BuilderPage() {
         if (savedData) {
             try {
                 const parsed = JSON.parse(savedData);
-                setResumeData(prev => ({
-                    ...prev,
-                    fullName: parsed.personal_info?.name || parsed.name || prev.fullName || "",
-                    email: parsed.personal_info?.email || parsed.email || prev.email || "",
-                    phone: parsed.personal_info?.phone || parsed.phone || prev.phone || "",
-                    linkedin: parsed.personal_info?.linkedin || parsed.linkedin || prev.linkedin || "",
-                    skills: Array.isArray(parsed.skills) ? parsed.skills.join(", ") : (parsed.skills || prev.skills || ""),
-
+                const newData = {
+                    fullName: parsed.personal_info?.name || parsed.name || "",
+                    email: parsed.personal_info?.email || parsed.email || "",
+                    phone: parsed.personal_info?.phone || parsed.phone || "",
+                    linkedin: parsed.personal_info?.linkedin || parsed.linkedin || "",
+                    skills: Array.isArray(parsed.skills) ? parsed.skills.join(", ") : (parsed.skills || ""),
                     experience: (parsed.experience || []).map((item: any) => ({
                         role: item.role || item.title || "",
                         company: item.company || "",
@@ -57,14 +54,15 @@ export default function BuilderPage() {
                         location: item.location || "",
                         description: item.description || ""
                     })),
-
                     education: (parsed.education || []).map((item: any) => ({
                         degree: item.degree || "",
                         school: item.school || item.university || "",
                         date: item.date || "",
                         location: item.location || ""
                     }))
-                }));
+                };
+                setResumeData(newData);
+                setPreviewData(newData); // Initial load par foran dikhao
             } catch (e) {
                 console.error("Error parsing AI data", e);
             }
@@ -131,7 +129,7 @@ export default function BuilderPage() {
             {/* WORKSPACE */}
             <div className="flex-1 flex overflow-hidden">
 
-                {/* LEFT: EDITOR FORM */}
+                {/* LEFT: EDITOR FORM (Inputs `resumeData` use karenge - FAST) */}
                 <div className="w-[40%] border-r border-slate-700 overflow-y-auto bg-slate-900 custom-scrollbar">
                     <div className="p-8 space-y-8">
 
@@ -185,7 +183,7 @@ export default function BuilderPage() {
 
                         <hr className="border-slate-800" />
 
-                        {/* Education (Jahan aapko error aa raha tha, ab fixed hai) */}
+                        {/* Education */}
                         <section>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2"><GraduationCap size={14} /> Education</h3>
@@ -197,7 +195,6 @@ export default function BuilderPage() {
                                         <button onClick={() => removeEducation(index)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {/* ✅ FIX: Yahan maine || "" add kar diya hai taaki undefined na ho */}
                                         <input placeholder="Degree" value={edu.degree || ""} onChange={(e) => handleEducationChange(index, 'degree', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-sm text-white font-bold" />
                                         <input placeholder="School" value={edu.school || ""} onChange={(e) => handleEducationChange(index, 'school', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-sm text-white" />
                                         <input placeholder="Date" value={edu.date || ""} onChange={(e) => handleEducationChange(index, 'date', e.target.value)} className="bg-slate-800 border border-slate-600 rounded p-2 text-xs text-slate-300" />
@@ -219,9 +216,9 @@ export default function BuilderPage() {
                     </div>
                 </div>
 
-                {/* RIGHT: LIVE PREVIEW */}
+                {/* RIGHT: LIVE PREVIEW (Uses 'previewData' - SLOW & SAFE) */}
                 <div className="w-[60%] h-full bg-slate-800 relative">
-                    <ResumePreview data={resumeData} />
+                    <ResumePreview data={previewData} />
                 </div>
 
             </div>
