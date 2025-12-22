@@ -51,11 +51,11 @@ export default function Home() {
     setPdfUrl(null);
   };
 
-  // --- RESULT RENDER LOGIC (FIXED) ---
+  // --- RESULT RENDER LOGIC (UPDATED WITH SCORING) ---
   const renderResult = () => {
     if (!result) return null;
 
-    // 🛑 1. ERROR HANDLING: Agar Backend se error aaye
+    // 🛑 1. ERROR HANDLING
     if (result.error) {
       return (
         <div className="bg-red-50 p-6 rounded-2xl border border-red-200 text-red-700 animate-in fade-in">
@@ -93,54 +93,86 @@ export default function Home() {
       );
     }
 
-    // 📊 3. ANALYZER / BUILDER UI
+    // 📊 3. ANALYZER / BUILDER UI (Enterprise Grade)
     return (
       <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-        <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+
+        {/* HEADER: Total Score */}
+        <div className="flex justify-between items-start mb-8 border-b border-gray-100 pb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               {mode === 'builder' ? <Hammer className="text-green-600" /> : <BarChart3 className="text-blue-600" />}
               {mode === 'builder' ? 'ATS Rewrite' : 'Analysis Report'}
             </h2>
+            <p className="text-sm text-slate-500 mt-1">Enterprise Grade Assessment</p>
           </div>
+
+          {/* Main Score Circle */}
           {result.ats_score !== undefined && (
             <div className="text-center">
-              <div className={`text-4xl font-black ${result.ats_score > 70 ? "text-emerald-500" : "text-blue-600"}`}>
+              <div className={`text-5xl font-black tracking-tighter ${result.ats_score > 80 ? "text-emerald-500" :
+                  result.ats_score > 60 ? "text-yellow-500" : "text-red-500"
+                }`}>
                 {result.ats_score}
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Score</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Score</span>
             </div>
           )}
         </div>
 
         {mode === 'analyze' ? (
-          <div className="space-y-6">
-            {/* Missing Skills Section (Safe Checked) */}
-            <div className="bg-rose-50/50 p-4 rounded-xl border border-rose-100">
-              <h3 className="font-bold text-rose-700 mb-2 flex items-center gap-2 text-sm"><AlertCircle size={16} /> Missing Skills</h3>
+          <div className="space-y-8">
+
+            {/* 🔥 NEW: SCORE BREAKDOWN (The Authentic Part) */}
+            {result.score_breakdown && (
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(result.score_breakdown).map(([key, val]: any) => (
+                  <div key={key} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div className="flex justify-between text-xs font-bold text-slate-600 mb-1 uppercase">
+                      <span>{key}</span>
+                      <span>{val}/25</span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${val >= 20 ? "bg-emerald-500" :
+                            val >= 15 ? "bg-blue-500" :
+                              val >= 10 ? "bg-yellow-500" : "bg-red-500"
+                          }`}
+                        style={{ width: `${(val / 25) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Missing Skills Section */}
+            <div className="bg-rose-50/50 p-5 rounded-xl border border-rose-100">
+              <h3 className="font-bold text-rose-700 mb-3 flex items-center gap-2 text-sm"><AlertCircle size={16} /> Critical Gaps</h3>
               <div className="flex flex-wrap gap-2">
-                {result.missing_skills && result.missing_skills.length > 0 ? (
+                {result.missing_skills?.length > 0 ? (
                   result.missing_skills.map((skill: string, i: number) => (
-                    <span key={i} className="px-2 py-1 bg-white text-rose-600 text-xs font-semibold rounded border border-rose-200">
+                    <span key={i} className="px-2.5 py-1 bg-white text-rose-700 text-xs font-semibold rounded-md border border-rose-200 shadow-sm">
                       {skill}
                     </span>
                   ))
-                ) : <span className="text-xs text-rose-400 italic">No critical skills missing found.</span>}
+                ) : <span className="text-xs text-rose-400 italic">No major skills missing.</span>}
               </div>
             </div>
 
-            {/* Improvements Section (Safe Checked) */}
-            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-              <h3 className="font-bold text-blue-700 mb-2 flex items-center gap-2 text-sm"><CheckCircle size={16} /> Improvements</h3>
-              <ul className="space-y-2">
-                {result.improvement_tips && result.improvement_tips.length > 0 ? (
+            {/* Improvements Section */}
+            <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
+              <h3 className="font-bold text-blue-700 mb-3 flex items-center gap-2 text-sm"><CheckCircle size={16} /> Expert Recommendations</h3>
+              <ul className="space-y-3">
+                {result.improvement_tips?.length > 0 ? (
                   result.improvement_tips.map((tip: string, i: number) => (
-                    <li key={i} className="text-xs text-slate-700 flex items-start gap-2 bg-white p-2 rounded border border-blue-100/50">
-                      <span className="mt-1 block min-w-[5px] min-h-[5px] rounded-full bg-blue-500"></span>
+                    <li key={i} className="text-sm text-slate-700 flex items-start gap-3 bg-white p-3 rounded-lg border border-blue-100/50 shadow-sm">
+                      <span className="mt-1.5 block min-w-[6px] min-h-[6px] rounded-full bg-blue-500"></span>
                       {tip}
                     </li>
                   ))
-                ) : <span className="text-xs text-blue-400 italic">No specific improvements suggested.</span>}
+                ) : <span className="text-xs text-blue-400 italic">Resume looks good!</span>}
               </ul>
             </div>
 
@@ -151,8 +183,10 @@ export default function Home() {
                 {result.summary}
               </div>
             )}
+
           </div>
         ) : (
+          // JSON VIEW (For debugging)
           <pre className="whitespace-pre-wrap bg-slate-50 p-4 rounded-lg text-xs font-mono text-slate-700 border border-slate-200 overflow-x-auto max-h-[500px]">
             {JSON.stringify(result, null, 2)}
           </pre>
